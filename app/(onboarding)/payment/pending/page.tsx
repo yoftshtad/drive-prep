@@ -3,8 +3,7 @@
 import { CircleDashed, Clock } from 'lucide-react'
 import { OnboardingGuard } from '@/components/app/onboarding-guard'
 import { Stepper } from '@/components/app/stepper'
-import { setAccessState, useSession } from '@/lib/access'
-import { setRejectionReason } from '@/lib/session'
+import { useSession } from '@/lib/access'
 
 function PendingInner() {
   const { user } = useSession()
@@ -28,28 +27,6 @@ function PendingInner() {
           </p>
           <p className="mt-1.5 text-sm font-bold text-foreground">Payment review in progress</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">What happens next: an admin verifies your receipt, then your dashboard unlocks automatically.</p>
-        </div>
-
-        <div className="mx-auto mt-7 max-w-sm rounded-xl border border-primary/20 bg-primary/5 p-4 text-left">
-          <p className="text-xs font-bold tracking-wide text-primary uppercase">Demo controls</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">Simulate the admin decision (in production this happens from the admin panel):</p>
-          <div className="mt-3 flex gap-2">
-            <button
-              className="flex-1 rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-green-700"
-              onClick={() => setAccessState('active')}
-            >
-              Simulate approval
-            </button>
-            <button
-              className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
-              onClick={() => {
-                setRejectionReason('The reference number on the receipt does not match your assigned reference. Please double-check and resubmit.')
-                setAccessState('rejected')
-              }}
-            >
-              Simulate rejection
-            </button>
-          </div>
         </div>
       </div>
     </div>
