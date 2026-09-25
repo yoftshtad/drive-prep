@@ -15,7 +15,6 @@ import { cn } from '@/lib/utils'
 const nav = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/payments', label: 'Payments', icon: CreditCard },
   { href: '/admin/modules', label: 'Modules', icon: BookOpen },
   { href: '/admin/questions', label: 'Questions', icon: ListChecks },
   { href: '/admin/questionnaires', label: 'Questionnaires', icon: ClipboardList },

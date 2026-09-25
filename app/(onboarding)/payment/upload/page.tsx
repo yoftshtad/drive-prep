@@ -2,11 +2,14 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CircleAlert, ImagePlus, Trash2, Upload } from 'lucide-react'
+import { CircleAlert, CircleCheck, ImagePlus, Loader2, Trash2, Upload } from 'lucide-react'
 import { OnboardingGuard } from '@/components/app/onboarding-guard'
 import { Stepper } from '@/components/app/stepper'
 import { setAccessState } from '@/lib/access'
+import { createPayment } from '@/lib/payment-store'
+import { getUser } from '@/lib/session'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 const MAX_SIZE_MB = 5
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp']
@@ -26,6 +29,8 @@ function UploadForm() {
   const [preview, setPreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [processing, setProcessing] = useState(false)
+  const [processingStep, setProcessingStep] = useState<string>('')
 
   const pick = (selected: File | undefined) => {
     setError(null)
@@ -42,18 +47,75 @@ function UploadForm() {
     setPreview(URL.createObjectURL(selected))
   }
 
-  const onSubmit = (e: React.FormEvent) => {
+  const fileToDataUrl = (f: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.readAsDataURL(f)
+    })
+  }
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!file) {
       setError('Please select a screenshot of your payment receipt first.')
       return
     }
     setSubmitting(true)
-    // MVP: R2 upload + payment record creation happens server-side in production.
-    setTimeout(() => {
+    setError(null)
+    setProcessing(true)
+    setProcessingStep('Saving payment record…')
+
+    try {
+      const receiptUrl = await fileToDataUrl(file)
+
+      const user = getUser()
+      const isEmail = user?.email?.includes('@')
+      const reference = `DP-${Date.now().toString(36).toUpperCase()}`
+
+      setProcessingStep('Creating payment record…')
+      createPayment({
+        userName: user?.name ?? 'Student',
+        userEmail: isEmail ? user?.email ?? '' : '',
+        userPhone: isEmail ? undefined : user?.email,
+        plan: 'Premium Access',
+        amount: 2500,
+        reference,
+        status: 'pending',
+        submittedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        receiptName: file.name,
+        receiptUrl,
+      })
+
+      setProcessingStep('Sending screenshot to admin on Telegram…')
+
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('userName', getUser()?.name ?? 'Student')
+      formData.append('userEmail', getUser()?.email ?? '')
+      formData.append('userPhone', getUser()?.phone ?? '')
+
+      const response = await fetch('/api/telegram/screenshot', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!result.ok) {
+        throw new Error(result.error ?? 'Failed to send screenshot to Telegram')
+      }
+
+      setProcessingStep('Screenshot sent! Redirecting…')
       setAccessState('pending')
-      router.push('/payment/pending')
-    }, 600)
+      
+      // Small delay to show success message
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      router.push('/waiting')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to process upload. Please try again.')
+      setProcessing(false)
+    }
   }
 
   return (
@@ -92,7 +154,6 @@ function UploadForm() {
                 <Trash2 className="size-3.5" /> Remove
               </button>
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={preview} alt="Payment receipt preview" className="max-h-96 w-full object-contain" />
           </div>
         ) : (
@@ -115,17 +176,36 @@ function UploadForm() {
           </p>
         )}
 
-        <Button type="submit" size="lg" disabled={submitting} className="h-12 w-full text-sm">
-          {submitting ? (
+        <Button type="submit" size="lg" disabled={submitting || processing} className="h-12 w-full text-sm">
+          {processing ? (
+            <>
+              <Loader2 className="size-4 animate-spin" /> {processingStep}
+            </>
+          ) : submitting ? (
             'Submitting…'
           ) : (
-            <>
-              <Upload className="size-4" /> Submit for verification
-            </>
+            'Submit for verification'
           )}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">Verification is done manually by our team and usually takes a few hours.</p>
+        <p className="text-center text-xs text-muted-foreground">Your screenshot will be sent to the admin on Telegram for verification.</p>
       </form>
+
+      {processing && (
+        <ConfirmDialog
+          open={processing}
+          title="Processing your upload"
+          message={processingStep}
+          confirmLabel="Cancel"
+          destructive={false}
+          onConfirm={() => {
+            setProcessing(false)
+            setSubmitting(false)
+          }}
+          onCancel={() => {}}
+        />
+      )}
     </div>
   )
 }
+
+const pick = (selected: File | undefined) => {}

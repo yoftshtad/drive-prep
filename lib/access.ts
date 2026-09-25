@@ -7,8 +7,8 @@ import type { AccessState } from './types'
 export { getAccessState, setAccessState } from './session'
 
 /**
- * Central access rule (PDF section 4).
- * UNPAID -> PENDING -> APPROVED(ACTIVE) | REJECTED -> RESUBMIT
+ * Central access rule.
+ * PENDING -> ACTIVE | REJECTED
  */
 export function hasActiveAccess(state: AccessState): boolean {
   return state === 'active'
@@ -19,17 +19,17 @@ export function accessRedirect(state: AccessState): string {
     case 'active':
       return '/dashboard'
     case 'pending':
-      return '/payment/pending'
+      return '/waiting'
     case 'rejected':
-      return '/payment/rejected'
+      return '/rejected'
     default:
-      return '/payment'
+      return '/waiting'
   }
 }
 
 export function useSession(): { user: SessionUser | null; access: AccessState; ready: boolean } {
   const [user, setUser] = useState<SessionUser | null>(null)
-  const [access, setAccess] = useState<AccessState>('unpaid')
+  const [access, setAccess] = useState<AccessState>('pending')
   const [ready, setReady] = useState(false)
 
   useEffect(() => {

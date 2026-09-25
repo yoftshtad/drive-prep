@@ -3,7 +3,7 @@
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const steps = ['Create account', 'Payment', 'Verification', 'Access']
+const steps = ['Account', 'Payment', 'Upload', 'Access']
 
 export function Stepper({ current }: { current: number }) {
   return (

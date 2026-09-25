@@ -16,24 +16,13 @@ export interface AdminUser {
 const KEY = 'dp.users'
 const EVENT = 'dp.users-change'
 
-const seedUsers: AdminUser[] = [
-  { id: 'u-1001', name: 'John Doe', email: 'john@example.com', access: 'active', joined: 'Aug 10, 2026', attempts: 24 },
-  { id: 'u-1002', name: 'Maria Santos', email: 'maria@example.com', access: 'pending', joined: 'Aug 14, 2026', attempts: 0 },
-  { id: 'u-1003', name: 'Ahmed Karim', email: 'ahmed@example.com', access: 'pending', joined: 'Aug 15, 2026', attempts: 2 },
-  { id: 'u-1004', name: 'Lisa Chen', email: 'lisa@example.com', access: 'rejected', joined: 'Aug 9, 2026', attempts: 11 },
-  { id: 'u-1005', name: 'Diego Ramos', email: 'diego@example.com', access: 'active', joined: 'Aug 2, 2026', attempts: 41 },
-  { id: 'u-1006', name: 'Fatima Nour', email: 'fatima@example.com', access: 'active', joined: 'Jul 28, 2026', attempts: 17 },
-  { id: 'u-1007', name: 'Ivan Petrov', email: 'ivan@example.com', access: 'unpaid', joined: 'Aug 16, 2026', attempts: 0 },
-  { id: 'u-1008', name: 'Grace Kim', email: 'grace@example.com', access: 'active', joined: 'Jul 15, 2026', attempts: 63 },
-]
-
 export function getUsers(): AdminUser[] {
-  if (typeof window === 'undefined') return seedUsers
+  if (typeof window === 'undefined') return []
   try {
     const raw = window.localStorage.getItem(KEY)
-    return raw ? (JSON.parse(raw) as AdminUser[]) : seedUsers
+    return raw ? (JSON.parse(raw) as AdminUser[]) : []
   } catch {
-    return seedUsers
+    return []
   }
 }
 
@@ -44,7 +33,7 @@ export function createUser(input: { id: string; name: string; email: string; pho
     name: input.name,
     email: input.email,
     phone: input.phone,
-    access: 'unpaid',
+    access: 'pending',
     joined: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     attempts: 0,
   }
@@ -78,7 +67,7 @@ export function subscribeUsers(listener: () => void) {
 }
 
 export function useUsers(): AdminUser[] {
-  const [users, setUsers] = useState<AdminUser[]>(seedUsers)
+  const [users, setUsers] = useState<AdminUser[]>([])
   useEffect(() => {
     const sync = () => setUsers(getUsers())
     sync()

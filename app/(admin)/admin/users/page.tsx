@@ -2,27 +2,32 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Search, Trash2 } from 'lucide-react'
+import { Search, Trash2, Check, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { deleteUser, useUsers, type AdminUser } from '@/lib/users-store'
+import { updateUserAccess, useUsers, deleteUser, type AdminUser } from '@/lib/users-store'
 import type { AccessState } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-const accessMeta: Record<AccessState, { label: string; variant: 'success' | 'warning' | 'destructive' | 'secondary' }> = {
+const accessMeta: Record<string, { label: string; variant: 'success' | 'warning' | 'destructive' | 'secondary' }> = {
   active: { label: 'Active', variant: 'success' },
   pending: { label: 'Pending', variant: 'warning' },
   rejected: { label: 'Rejected', variant: 'destructive' },
   unpaid: { label: 'Unpaid', variant: 'secondary' },
 }
 
+function getAccessMeta(access: string) {
+  return accessMeta[access] ?? { label: access, variant: 'secondary' as const }
+}
+
 export default function AdminUsersPage() {
   const users = useUsers()
   const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState<'all' | AccessState>('all')
+  const [filter, setFilter] = useState<'all' | 'pending' | 'active' | 'rejected'>('all')
   const [pendingDelete, setPendingDelete] = useState<AdminUser | null>(null)
+  const [pendingAction, setPendingAction] = useState<{ user: AdminUser; action: 'approve' | 'reject' } | null>(null)
   const [deletedName, setDeletedName] = useState<string | null>(null)
 
   const filtered = useMemo(
@@ -43,11 +48,17 @@ export default function AdminUsersPage() {
     setTimeout(() => setDeletedName(null), 4000)
   }
 
+  const confirmAction = () => {
+    if (!pendingAction) return
+    updateUserAccess(pendingAction.user.id, pendingAction.action === 'approve' ? 'active' : 'rejected')
+    setPendingAction(null)
+  }
+
   return (
     <div className="mx-auto max-w-6xl">
       <header>
         <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Users</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground sm:text-base">{users.length} registered students and their access states.</p>
+        <p className="mt-1.5 text-sm text-muted-foreground sm:text-base">{users.length} registered users. New signups appear here automatically.</p>
       </header>
 
       {deletedName && (
@@ -62,7 +73,7 @@ export default function AdminUsersPage() {
           <Input placeholder="Search by name or email…" className="pl-9" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-1.5">
-          {(['all', 'active', 'pending', 'rejected', 'unpaid'] as const).map((state) => (
+          {(['all', 'pending', 'active', 'rejected'] as const).map((state) => (
             <button
               key={state}
               onClick={() => setFilter(state)}
@@ -93,15 +104,33 @@ export default function AdminUsersPage() {
               <TableRow key={u.id}>
                 <TableCell className="pl-5">
                   <p className="font-semibold">{u.name}</p>
-                  <p className="text-xs text-muted-foreground">{u.email}</p>
+                  <p className="text-xs text-muted-foreground">{u.email || u.phone || '—'}</p>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={accessMeta[u.access].variant}>{accessMeta[u.access].label}</Badge>
+                  <Badge variant={getAccessMeta(u.access).variant}>{getAccessMeta(u.access).label}</Badge>
                 </TableCell>
                 <TableCell>{u.attempts}</TableCell>
                 <TableCell className="text-muted-foreground">{u.joined}</TableCell>
                 <TableCell className="pr-5">
                   <div className="flex items-center justify-end gap-1.5">
+                    {u.access === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => setPendingAction({ user: u, action: 'approve' })}
+                          className="flex size-8 items-center justify-center rounded-lg bg-green-100 text-green-700 transition-colors hover:bg-green-200"
+                          aria-label={`Approve ${u.name}`}
+                        >
+                          <Check className="size-4" />
+                        </button>
+                        <button
+                          onClick={() => setPendingAction({ user: u, action: 'reject' })}
+                          className="flex size-8 items-center justify-center rounded-lg bg-red-100 text-red-700 transition-colors hover:bg-red-200"
+                          aria-label={`Reject ${u.name}`}
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => setPendingDelete(u)}
                       className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-destructive"
@@ -124,20 +153,25 @@ export default function AdminUsersPage() {
         </Table>
       </section>
 
-      <p className="mt-4 text-xs text-muted-foreground">
-        Deleting an account permanently removes the student and their data. Need to review a payment instead?{' '}
-        <Link href="/admin/payments" className="font-semibold text-primary hover:underline">
-          Go to payments
-        </Link>
-      </p>
-
       <ConfirmDialog
         open={!!pendingDelete}
         title={`Delete ${pendingDelete?.name ?? 'this account'}?`}
-        message={`This permanently removes ${pendingDelete?.email ?? 'the account'} and all associated data. Use this for suspicious or spam accounts — it cannot be undone.`}
+        message={`This permanently removes ${pendingDelete?.email ?? 'the account'} and all associated data. This cannot be undone.`}
         confirmLabel="Delete account"
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={!!pendingAction}
+        title={pendingAction?.action === 'approve' ? `Approve ${pendingAction?.user.name}?` : `Reject ${pendingAction?.user.name}?`}
+        message={pendingAction?.action === 'approve'
+          ? `Grant dashboard access to ${pendingAction?.user.email ?? 'this user'}?`
+          : `Deny access for ${pendingAction?.user.email ?? 'this user'}? They will be notified.`}
+        confirmLabel={pendingAction?.action === 'approve' ? 'Approve' : 'Reject'}
+        destructive={pendingAction?.action === 'reject'}
+        onConfirm={confirmAction}
+        onCancel={() => setPendingAction(null)}
       />
     </div>
   )

@@ -31,8 +31,8 @@ function PaymentInstructions() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Payment instructions</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Unlock full access to all modules, questionnaires and mock tests with a one-time payment. Your access is activated after an
-          administrator verifies your payment receipt — usually within a few hours.
+          Complete the payment below, then upload a screenshot of the receipt. An admin will verify it on Telegram
+          and activate your access.
         </p>
       </div>
 
@@ -65,7 +65,7 @@ function PaymentInstructions() {
           'Send exactly $25.00 to the account above using your banking app.',
           `Include the reference "${reference}" in your transfer so we can match your payment.`,
           'Take a clear screenshot of the successful payment receipt.',
-          'Upload the screenshot and wait for verification — you will be notified by email.',
+          'Upload the screenshot and wait for verification — you will be notified on Telegram.',
         ].map((step, i) => (
           <li key={i} className="flex gap-3">
             <span className="flex size-5.5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{i + 1}</span>

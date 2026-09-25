@@ -6,7 +6,7 @@ export type QuestionType = 'single' | 'truefalse'
 
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
-export type AccessState = 'unpaid' | 'pending' | 'active' | 'rejected'
+export type AccessState = 'pending' | 'active' | 'rejected'
 
 export type UserRole = 'student' | 'admin'
 
@@ -69,6 +69,7 @@ export interface PaymentRecord {
   id: string
   userName: string
   userEmail: string
+  userPhone?: string
   plan: string
   amount: number
   reference: string
@@ -76,6 +77,7 @@ export interface PaymentRecord {
   submittedAt: string
   reason?: string
   receiptName: string
+  receiptUrl?: string
 }
 
 export interface AttemptRecord {

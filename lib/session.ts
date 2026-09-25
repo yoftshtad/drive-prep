@@ -12,6 +12,10 @@ export interface SessionUser {
   plan: 'free' | 'premium'
 }
 
+// Single admin credential — only this exact email + password gets admin access
+const ADMIN_EMAIL = 'admin@driveprep.com'
+const ADMIN_PASSWORD = 'driveprep2024'
+
 const USER_KEY = 'dp.user'
 const ACCESS_KEY = 'dp.access'
 const REJECTION_KEY = 'dp.rejection'
@@ -47,20 +51,23 @@ export function getUser(): SessionUser | null {
   return read<SessionUser>(USER_KEY)
 }
 
-export function signIn(identifier: string, name: string): SessionUser {
-  const isAdmin = identifier.trim().toLowerCase().startsWith('admin')
+export function signIn(identifier: string, password: string): SessionUser {
+  const normalized = identifier.trim().toLowerCase()
+  const isAdmin = normalized === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD
   const role: UserRole = isAdmin ? 'admin' : 'student'
   const isEmail = identifier.includes('@')
   const user: SessionUser = {
     id: role === 'admin' ? 'u-admin' : 'u-student',
-    name: name || (isEmail ? identifier.split('@')[0]?.replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : identifier),
+    name: isEmail ? identifier.split('@')[0]?.replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : identifier,
     email: isEmail ? identifier : '',
     phone: isEmail ? undefined : identifier,
     role,
     plan: role === 'admin' ? 'premium' : 'free',
   }
   write(USER_KEY, user)
-  if (role === 'admin') write(ACCESS_KEY, 'active')
+  if (role === 'admin') {
+    write(ACCESS_KEY, 'active')
+  }
   return user
 }
 
@@ -75,7 +82,7 @@ export function signUp(name: string, identifier: string): SessionUser {
     plan: 'free',
   }
   write(USER_KEY, user)
-  setAccessState('unpaid')
+  setAccessState('pending')
   // Also create in admin users store
   if (typeof window !== 'undefined') {
     createUser({ id: user.id, name, email: user.email, phone: user.phone })
@@ -92,7 +99,7 @@ export function signOut() {
 }
 
 export function getAccessState(): AccessState {
-  return read<AccessState>(ACCESS_KEY) ?? 'unpaid'
+  return read<AccessState>(ACCESS_KEY) ?? 'pending'
 }
 
 export function setAccessState(state: AccessState) {

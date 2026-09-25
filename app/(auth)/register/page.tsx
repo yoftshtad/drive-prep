@@ -47,7 +47,7 @@ export default function RegisterPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Start learning in minutes. Next step: unlock access with a one-time payment.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Start learning in minutes. An admin will review your account and grant access.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>

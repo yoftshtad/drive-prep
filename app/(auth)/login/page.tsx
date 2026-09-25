@@ -37,7 +37,7 @@ export default function LoginPage() {
 
   const onSubmit = (values: FormValues) => {
     setServerError(null)
-    const user = signIn(values.identifier, '')
+    const user = signIn(values.identifier, values.password)
     if (user.role === 'admin') {
       router.push('/admin')
       return
@@ -55,8 +55,7 @@ export default function LoginPage() {
       <div className="mb-5 flex gap-3 rounded-xl bg-primary/5 p-3.5 text-xs leading-5 text-muted-foreground ring-1 ring-primary/10">
         <Info className="mt-0.5 size-4 shrink-0 text-primary" />
         <p>
-          <span className="font-semibold text-foreground">Demo mode:</span> any password works. Use an identifier starting with{' '}
-          <code className="rounded bg-muted px-1 py-0.5 font-semibold">admin</code> to enter the admin panel.
+          <span className="font-semibold text-foreground">Admin login:</span> email <code className="rounded bg-muted px-1 py-0.5 font-semibold">admin@driveprep.com</code> + password <code className="rounded bg-muted px-1 py-0.5 font-semibold">driveprep2024</code>
         </p>
       </div>
 

@@ -1,18 +1,17 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import type { AttemptRecord } from './types'
-import { attemptHistory } from './mock-data'
 
 const KEY = 'dp.attempts'
 
 export function getAttempts(): AttemptRecord[] {
-  if (typeof window === 'undefined') return attemptHistory
+  if (typeof window === 'undefined') return []
   try {
     const raw = window.localStorage.getItem(KEY)
-    const saved = raw ? (JSON.parse(raw) as AttemptRecord[]) : []
-    return [...saved, ...attemptHistory]
+    return raw ? (JSON.parse(raw) as AttemptRecord[]) : []
   } catch {
-    return attemptHistory
+    return []
   }
 }
 
@@ -56,3 +55,25 @@ export function getLastAttempt(): LastAttempt | null {
     return null
   }
 }
+
+export function useAttempts(): AttemptRecord[] {
+  const [attempts, setAttempts] = useState<AttemptRecord[]>([])
+  useEffect(() => {
+    const sync = () => setAttempts(getAttempts())
+    sync()
+    return subscribeAttempts(sync)
+  }, [])
+  return attempts
+}
+
+export function subscribeAttempts(listener: () => void) {
+  if (typeof window === 'undefined') return () => {}
+  window.addEventListener(EVENT, listener)
+  window.addEventListener('storage', listener)
+  return () => {
+    window.removeEventListener(EVENT, listener)
+    window.removeEventListener('storage', listener)
+  }
+}
+
+const EVENT = 'dp.attempts-change'

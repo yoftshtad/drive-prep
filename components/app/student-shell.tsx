@@ -19,7 +19,6 @@ const nav = [
   { href: '/mock-tests', label: 'Mock Tests', icon: ClipboardList },
   { href: '/performance', label: 'Performance', icon: ChartLine },
   { href: '/bookmarks', label: 'Bookmarks', icon: Bookmark },
-  { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/help', label: 'Help & Support', icon: Headphones },
@@ -58,12 +57,6 @@ function PremiumCard() {
       <Crown className="mx-auto size-7 text-amber-400" fill="currentColor" />
       <p className="mt-2 text-sm font-bold text-primary">Premium Access</p>
       <p className="mt-1 text-xs leading-5 text-muted-foreground">You have full access to all modules and tests.</p>
-      <Link
-        href="/payments"
-        className="mt-4 block rounded-lg border border-primary/30 bg-card px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5"
-      >
-        View Plan
-      </Link>
     </div>
   )
 }
